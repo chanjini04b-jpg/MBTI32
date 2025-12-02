@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI 32가지 유형 분석 - 나의 진짜 성격 찾기</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 헤더 -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">MBTI 32 Type</h1>
+            <nav class="nav">
+                <a href="#home" class="nav-link">홈</a>
+                <a href="#types" class="nav-link">32가지 유형</a>
+                <a href="#test" class="nav-link">나의 MBTI 분석</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 메인 섹션 -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h2 class="hero-title">나의 진짜 성격 유형을 찾아보세요</h2>
+            <p class="hero-subtitle">MBTI 16가지를 넘어 32가지 세분화된 유형으로 더 정확한 나를 발견하세요</p>
+            <button class="btn-primary" onclick="scrollToSection('test')">무료 테스트 시작하기</button>
+        </div>
+    </section>
+
+    <!-- MBTI 32가지 유형 섹션 -->
+    <section id="types" class="types-section">
+        <div class="container">
+            <h2 class="section-title">MBTI 32가지 유형</h2>
+            <p class="section-subtitle">각 MBTI 유형은 A형(적극적)과 T형(신중한)으로 나뉩니다</p>
+            
+            <!-- 필터 -->
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterTypes('all')">전체</button>
+                <button class="filter-btn" onclick="filterTypes('analyst')">분석가형</button>
+                <button class="filter-btn" onclick="filterTypes('diplomat')">외교관형</button>
+                <button class="filter-btn" onclick="filterTypes('sentinel')">관리자형</button>
+                <button class="filter-btn" onclick="filterTypes('explorer')">탐험가형</button>
+            </div>
+
+            <!-- 유형 카드 그리드 -->
+            <div id="types-grid" class="types-grid"></div>
+        </div>
+    </section>
+
+    <!-- MBTI 테스트 섹션 -->
+    <section id="test" class="test-section">
+        <div class="container">
+            <div id="test-intro" class="test-intro">
+                <h2 class="section-title">나의 MBTI 유형 분석</h2>
+                <p class="section-subtitle">40개의 질문으로 당신의 정확한 MBTI 유형을 찾아드립니다</p>
+                <button class="btn-primary" onclick="startTest()">테스트 시작</button>
+            </div>
+
+            <div id="test-content" class="test-content hidden">
+                <div class="progress-bar">
+                    <div id="progress" class="progress"></div>
+                </div>
+                <p class="question-counter">질문 <span id="current-question">1</span> / 40</p>
+                <h3 id="question-text" class="question-text"></h3>
+                <div class="options">
+                    <button class="option-btn" onclick="answer(1)">매우 동의하지 않음</button>
+                    <button class="option-btn" onclick="answer(2)">동의하지 않음</button>
+                    <button class="option-btn" onclick="answer(3)">보통</button>
+                    <button class="option-btn" onclick="answer(4)">동의함</button>
+                    <button class="option-btn" onclick="answer(5)">매우 동의함</button>
+                </div>
+            </div>
+
+            <div id="test-result" class="test-result hidden">
+                <h2 class="section-title">당신의 MBTI 유형은</h2>
+                <div id="result-card" class="result-card"></div>
+                <div class="result-actions">
+                    <button class="btn-primary" onclick="saveResult()">결과 저장</button>
+                    <button class="btn-secondary" onclick="printResult()">결과 인쇄</button>
+                    <button class="btn-secondary" onclick="restartTest()">다시 테스트</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 유형 상세 모달 -->
+    <div id="type-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="saveTypeInfo()">저장</button>
+                <button class="btn-secondary" onclick="printTypeInfo()">인쇄</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 푸터 -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 MBTI 32 Type. 더 정확한 나를 찾는 여정</p>
+        </div>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
