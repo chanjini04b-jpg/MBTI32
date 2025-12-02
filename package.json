@@ -1,0 +1,23 @@
+{
+  "name": "mbti-32-type-analysis",
+  "version": "1.0.0",
+  "description": "MBTI 32가지 유형 분석 랜딩 사이트",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Opening index.html...' && start index.html"
+  },
+  "keywords": [
+    "mbti",
+    "personality",
+    "test",
+    "korean",
+    "psychology"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/mbti32.git"
+  },
+  "homepage": "https://your-username.github.io/mbti32/"
+}

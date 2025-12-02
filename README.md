@@ -42,11 +42,14 @@ MBTI32/
 ├── styles.css      # 스타일시트
 ├── data.js         # MBTI 유형 데이터 및 테스트 질문
 ├── script.js       # 메인 JavaScript 로직
+├── .gitignore      # Git 제외 파일 목록
+├── CNAME           # GitHub Pages 커스텀 도메인 설정 (선택)
 └── README.md       # 프로젝트 설명서
 ```
 
 ## 🚀 실행 방법
 
+### 로컬 실행
 1. 프로젝트 폴더에서 `index.html` 파일을 웹 브라우저로 엽니다.
 2. 또는 VS Code의 Live Server 확장을 사용하여 실행합니다.
 
@@ -54,6 +57,33 @@ MBTI32/
 # VS Code에서 실행
 # index.html 파일을 우클릭 > "Open with Live Server"
 ```
+
+### GitHub Pages 배포
+
+1. **저장소 생성**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit: MBTI 32 Type Analysis Site"
+   ```
+
+2. **GitHub에 푸시**
+   ```bash
+   git remote add origin https://github.com/your-username/mbti32.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+3. **GitHub Pages 활성화**
+   - GitHub 저장소 페이지에서 `Settings` 탭 클릭
+   - 왼쪽 메뉴에서 `Pages` 클릭
+   - `Source`에서 `main` 브랜치 선택
+   - `Save` 버튼 클릭
+   - 몇 분 후 `https://your-username.github.io/mbti32/` 에서 접속 가능
+
+4. **커스텀 도메인 설정 (선택사항)**
+   - `CNAME` 파일에 도메인 입력
+   - GitHub Pages 설정에서 커스텀 도메인 설정
 
 ## 💡 사용 방법
 
@@ -123,7 +153,11 @@ MBTI32/
 
 ## 📝 라이선스
 
-이 프로젝트는 교육 및 개인 사용 목적으로 제작되었습니다.
+이 프로젝트는 MIT License 하에 배포됩니다. 교육 및 개인/상업적 사용 모두 가능합니다.
+
+## 🚀 배포
+
+GitHub Pages를 통한 배포 방법은 [DEPLOY.md](DEPLOY.md) 문서를 참조하세요.
 
 ## 🙋‍♂️ 기여
 

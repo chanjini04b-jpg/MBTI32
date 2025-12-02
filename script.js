@@ -278,7 +278,7 @@ function showResult(typeCode) {
     localStorage.setItem('myMBTIDate', new Date().toLocaleDateString('ko-KR'));
 }
 
-// 결과 저장
+// 결과 저장 (PDF)
 function saveResult() {
     const myMBTI = localStorage.getItem('myMBTI');
     if (!myMBTI) {
@@ -289,31 +289,157 @@ function saveResult() {
     const type = mbtiTypes[myMBTI];
     const date = new Date().toLocaleDateString('ko-KR');
     
-    // JSON 형식으로 결과 생성
-    const resultData = {
-        date: date,
-        type: type.type,
-        name: type.name,
-        category: type.category,
-        description: type.description,
-        traits: type.traits,
-        strengths: type.strengths,
-        weaknesses: type.weaknesses,
-        careers: type.careers,
-        relationships: type.relationships
-    };
+    // jsPDF 사용
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
     
-    // JSON 파일로 다운로드
-    const dataStr = JSON.stringify(resultData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `MBTI_결과_${type.type}_${date.replace(/\./g, '_')}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    // 한글 폰트 설정을 위한 기본 설정
+    let yPosition = 20;
+    const lineHeight = 7;
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const contentWidth = pageWidth - (margin * 2);
     
-    alert('결과가 저장되었습니다!');
+    // 제목
+    doc.setFontSize(24);
+    doc.text('MBTI 32 Type Analysis', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // 날짜
+    doc.setFontSize(10);
+    doc.text(`Test Date: ${date}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // 유형 박스
+    doc.setFillColor(99, 102, 241);
+    doc.roundedRect(margin, yPosition, contentWidth, 20, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.text(type.type, pageWidth / 2, yPosition + 8, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text(type.name, pageWidth / 2, yPosition + 15, { align: 'center' });
+    yPosition += 30;
+    
+    // 설명
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    const descLines = doc.splitTextToSize(type.description, contentWidth);
+    doc.text(descLines, margin, yPosition);
+    yPosition += descLines.length * lineHeight + 5;
+    
+    // 특성 점수
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Traits Score', margin, yPosition);
+    yPosition += 10;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    
+    const traits = [
+        { name: 'Energy', value: type.traits.energy },
+        { name: 'Nature', value: type.traits.nature },
+        { name: 'Tactics', value: type.traits.tactics },
+        { name: 'Identity', value: type.traits.identity }
+    ];
+    
+    traits.forEach(trait => {
+        doc.text(`${trait.name}:`, margin, yPosition);
+        // 진행 바
+        doc.setDrawColor(229, 231, 235);
+        doc.setFillColor(229, 231, 235);
+        doc.roundedRect(margin + 30, yPosition - 3, 100, 5, 1, 1, 'F');
+        doc.setFillColor(99, 102, 241);
+        doc.roundedRect(margin + 30, yPosition - 3, trait.value, 5, 1, 1, 'F');
+        doc.text(`${trait.value}%`, margin + 135, yPosition);
+        yPosition += 8;
+    });
+    yPosition += 5;
+    
+    // 강점
+    if (yPosition > 200) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Strengths', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    type.strengths.forEach(strength => {
+        const text = `• ${strength}`;
+        const lines = doc.splitTextToSize(text, contentWidth);
+        doc.text(lines, margin, yPosition);
+        yPosition += lines.length * lineHeight;
+    });
+    yPosition += 5;
+    
+    // 약점
+    if (yPosition > 220) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Weaknesses', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    type.weaknesses.forEach(weakness => {
+        const text = `• ${weakness}`;
+        const lines = doc.splitTextToSize(text, contentWidth);
+        doc.text(lines, margin, yPosition);
+        yPosition += lines.length * lineHeight;
+    });
+    yPosition += 5;
+    
+    // 추천 직업
+    if (yPosition > 220) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Recommended Careers', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    const careersText = type.careers.join(', ');
+    const careerLines = doc.splitTextToSize(careersText, contentWidth);
+    doc.text(careerLines, margin, yPosition);
+    yPosition += careerLines.length * lineHeight + 5;
+    
+    // 관계 특성
+    if (yPosition > 220) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Relationships', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    const relLines = doc.splitTextToSize(type.relationships, contentWidth);
+    doc.text(relLines, margin, yPosition);
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `MBTI 32 Type Analysis - Page ${i} of ${pageCount}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+        );
+    }
+    
+    // PDF 저장
+    doc.save(`MBTI_Result_${type.type}_${date.replace(/\./g, '_').replace(/\s/g, '')}.pdf`);
+    alert('PDF 파일로 저장되었습니다!');
 }
 
 // 결과 인쇄
@@ -328,7 +454,7 @@ function restartTest() {
     scrollToSection('test');
 }
 
-// 유형 정보 저장
+// 유형 정보 저장 (PDF)
 function saveTypeInfo() {
     if (!currentSelectedType) {
         alert('저장할 유형이 선택되지 않았습니다.');
@@ -338,29 +464,155 @@ function saveTypeInfo() {
     const type = mbtiTypes[currentSelectedType];
     const date = new Date().toLocaleDateString('ko-KR');
     
-    const resultData = {
-        date: date,
-        type: type.type,
-        name: type.name,
-        category: type.category,
-        description: type.description,
-        traits: type.traits,
-        strengths: type.strengths,
-        weaknesses: type.weaknesses,
-        careers: type.careers,
-        relationships: type.relationships
-    };
+    // jsPDF 사용
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
     
-    const dataStr = JSON.stringify(resultData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `MBTI_${type.type}_설명_${date.replace(/\./g, '_')}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    let yPosition = 20;
+    const lineHeight = 7;
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const contentWidth = pageWidth - (margin * 2);
     
-    alert('유형 정보가 저장되었습니다!');
+    // 제목
+    doc.setFontSize(24);
+    doc.text('MBTI 32 Type Information', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // 날짜
+    doc.setFontSize(10);
+    doc.text(`Date: ${date}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // 유형 박스
+    doc.setFillColor(99, 102, 241);
+    doc.roundedRect(margin, yPosition, contentWidth, 20, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.text(type.type, pageWidth / 2, yPosition + 8, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text(type.name, pageWidth / 2, yPosition + 15, { align: 'center' });
+    yPosition += 30;
+    
+    // 설명
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    const descLines = doc.splitTextToSize(type.description, contentWidth);
+    doc.text(descLines, margin, yPosition);
+    yPosition += descLines.length * lineHeight + 5;
+    
+    // 특성 점수
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Traits Score', margin, yPosition);
+    yPosition += 10;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    
+    const traits = [
+        { name: 'Energy', value: type.traits.energy },
+        { name: 'Nature', value: type.traits.nature },
+        { name: 'Tactics', value: type.traits.tactics },
+        { name: 'Identity', value: type.traits.identity }
+    ];
+    
+    traits.forEach(trait => {
+        doc.text(`${trait.name}:`, margin, yPosition);
+        doc.setDrawColor(229, 231, 235);
+        doc.setFillColor(229, 231, 235);
+        doc.roundedRect(margin + 30, yPosition - 3, 100, 5, 1, 1, 'F');
+        doc.setFillColor(99, 102, 241);
+        doc.roundedRect(margin + 30, yPosition - 3, trait.value, 5, 1, 1, 'F');
+        doc.text(`${trait.value}%`, margin + 135, yPosition);
+        yPosition += 8;
+    });
+    yPosition += 5;
+    
+    // 강점
+    if (yPosition > 200) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Strengths', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    type.strengths.forEach(strength => {
+        const text = `• ${strength}`;
+        const lines = doc.splitTextToSize(text, contentWidth);
+        doc.text(lines, margin, yPosition);
+        yPosition += lines.length * lineHeight;
+    });
+    yPosition += 5;
+    
+    // 약점
+    if (yPosition > 220) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Weaknesses', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    type.weaknesses.forEach(weakness => {
+        const text = `• ${weakness}`;
+        const lines = doc.splitTextToSize(text, contentWidth);
+        doc.text(lines, margin, yPosition);
+        yPosition += lines.length * lineHeight;
+    });
+    yPosition += 5;
+    
+    // 추천 직업
+    if (yPosition > 220) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Recommended Careers', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    const careersText = type.careers.join(', ');
+    const careerLines = doc.splitTextToSize(careersText, contentWidth);
+    doc.text(careerLines, margin, yPosition);
+    yPosition += careerLines.length * lineHeight + 5;
+    
+    // 관계 특성
+    if (yPosition > 220) {
+        doc.addPage();
+        yPosition = 20;
+    }
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Relationships', margin, yPosition);
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    const relLines = doc.splitTextToSize(type.relationships, contentWidth);
+    doc.text(relLines, margin, yPosition);
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `MBTI 32 Type Analysis - Page ${i} of ${pageCount}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+        );
+    }
+    
+    // PDF 저장
+    doc.save(`MBTI_Type_${type.type}_${date.replace(/\./g, '_').replace(/\s/g, '')}.pdf`);
+    alert('PDF 파일로 저장되었습니다!');
 }
 
 // 유형 정보 인쇄
