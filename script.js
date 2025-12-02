@@ -278,8 +278,8 @@ function showResult(typeCode) {
     localStorage.setItem('myMBTIDate', new Date().toLocaleDateString('ko-KR'));
 }
 
-// 결과 저장 (PDF)
-function saveResult() {
+// 결과 저장 (PDF - 한글 지원)
+async function saveResult() {
     const myMBTI = localStorage.getItem('myMBTI');
     if (!myMBTI) {
         alert('저장할 결과가 없습니다.');
@@ -289,157 +289,131 @@ function saveResult() {
     const type = mbtiTypes[myMBTI];
     const date = new Date().toLocaleDateString('ko-KR');
     
-    // jsPDF 사용
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
+    // PDF용 임시 컨테이너 생성
+    const pdfContainer = document.createElement('div');
+    pdfContainer.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        width: 794px;
+        padding: 40px;
+        background: white;
+        font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    `;
     
-    // 한글 폰트 설정을 위한 기본 설정
-    let yPosition = 20;
-    const lineHeight = 7;
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - (margin * 2);
+    pdfContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 32px; color: #1f2937; margin-bottom: 10px;">MBTI 32가지 유형 분석</h1>
+            <p style="color: #6b7280; font-size: 14px;">검사일: ${date}</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;">${type.type}</div>
+            <div style="font-size: 20px;">${type.name}</div>
+        </div>
+        
+        <div style="margin-bottom: 25px; line-height: 1.8; font-size: 15px; color: #374151;">
+            ${type.description}
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+            <h2 style="font-size: 20px; color: #1f2937; margin-bottom: 15px; border-bottom: 2px solid #6366f1; padding-bottom: 8px;">특성 점수</h2>
+            ${Object.entries({
+                '에너지 (Energy)': type.traits.energy,
+                '본성 (Nature)': type.traits.nature,
+                '전술 (Tactics)': type.traits.tactics,
+                '정체성 (Identity)': type.traits.identity
+            }).map(([label, value]) => `
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: 600; color: #374151;">${label}</span>
+                        <span style="color: #6366f1; font-weight: bold;">${value}%</span>
+                    </div>
+                    <div style="background: #e5e7eb; height: 10px; border-radius: 5px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #6366f1, #8b5cf6); height: 100%; width: ${value}%; border-radius: 5px;"></div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+            <div>
+                <h2 style="font-size: 20px; color: #10b981; margin-bottom: 15px; border-bottom: 2px solid #10b981; padding-bottom: 8px;">💪 강점</h2>
+                <ul style="line-height: 2; padding-left: 20px; color: #374151;">
+                    ${type.strengths.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+            </div>
+            <div>
+                <h2 style="font-size: 20px; color: #f59e0b; margin-bottom: 15px; border-bottom: 2px solid #f59e0b; padding-bottom: 8px;">⚠️ 주의할 점</h2>
+                <ul style="line-height: 2; padding-left: 20px; color: #374151;">
+                    ${type.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h2 style="font-size: 20px; color: #1f2937; margin-bottom: 12px;">💼 추천 직업</h2>
+            <p style="line-height: 1.8; color: #374151; font-size: 15px;">
+                ${type.careers.join(' · ')}
+            </p>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; border-radius: 12px;">
+            <h2 style="font-size: 20px; color: #1f2937; margin-bottom: 12px;">❤️ 관계 특성</h2>
+            <p style="line-height: 1.8; color: #374151; font-size: 15px;">
+                ${type.relationships}
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px;">
+            MBTI 32 Type Analysis © 2025
+        </div>
+    `;
     
-    // 제목
-    doc.setFontSize(24);
-    doc.text('MBTI 32 Type Analysis', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
+    document.body.appendChild(pdfContainer);
     
-    // 날짜
-    doc.setFontSize(10);
-    doc.text(`Test Date: ${date}`, pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
-    
-    // 유형 박스
-    doc.setFillColor(99, 102, 241);
-    doc.roundedRect(margin, yPosition, contentWidth, 20, 3, 3, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.text(type.type, pageWidth / 2, yPosition + 8, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(type.name, pageWidth / 2, yPosition + 15, { align: 'center' });
-    yPosition += 30;
-    
-    // 설명
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    const descLines = doc.splitTextToSize(type.description, contentWidth);
-    doc.text(descLines, margin, yPosition);
-    yPosition += descLines.length * lineHeight + 5;
-    
-    // 특성 점수
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Traits Score', margin, yPosition);
-    yPosition += 10;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    
-    const traits = [
-        { name: 'Energy', value: type.traits.energy },
-        { name: 'Nature', value: type.traits.nature },
-        { name: 'Tactics', value: type.traits.tactics },
-        { name: 'Identity', value: type.traits.identity }
-    ];
-    
-    traits.forEach(trait => {
-        doc.text(`${trait.name}:`, margin, yPosition);
-        // 진행 바
-        doc.setDrawColor(229, 231, 235);
-        doc.setFillColor(229, 231, 235);
-        doc.roundedRect(margin + 30, yPosition - 3, 100, 5, 1, 1, 'F');
-        doc.setFillColor(99, 102, 241);
-        doc.roundedRect(margin + 30, yPosition - 3, trait.value, 5, 1, 1, 'F');
-        doc.text(`${trait.value}%`, margin + 135, yPosition);
-        yPosition += 8;
-    });
-    yPosition += 5;
-    
-    // 강점
-    if (yPosition > 200) {
-        doc.addPage();
-        yPosition = 20;
+    try {
+        // html2canvas로 이미지 생성
+        const canvas = await html2canvas(pdfContainer, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        // PDF 생성
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        // 첫 페이지
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= 297; // A4 height in mm
+        
+        // 여러 페이지가 필요한 경우
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= 297;
+        }
+        
+        // PDF 저장
+        pdf.save(`MBTI_결과_${type.type}_${date.replace(/\./g, '_').replace(/\s/g, '')}.pdf`);
+        alert('PDF 파일로 저장되었습니다!');
+    } catch (error) {
+        console.error('PDF 생성 오류:', error);
+        alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+        // 임시 컨테이너 제거
+        document.body.removeChild(pdfContainer);
     }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Strengths', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    type.strengths.forEach(strength => {
-        const text = `• ${strength}`;
-        const lines = doc.splitTextToSize(text, contentWidth);
-        doc.text(lines, margin, yPosition);
-        yPosition += lines.length * lineHeight;
-    });
-    yPosition += 5;
-    
-    // 약점
-    if (yPosition > 220) {
-        doc.addPage();
-        yPosition = 20;
-    }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Weaknesses', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    type.weaknesses.forEach(weakness => {
-        const text = `• ${weakness}`;
-        const lines = doc.splitTextToSize(text, contentWidth);
-        doc.text(lines, margin, yPosition);
-        yPosition += lines.length * lineHeight;
-    });
-    yPosition += 5;
-    
-    // 추천 직업
-    if (yPosition > 220) {
-        doc.addPage();
-        yPosition = 20;
-    }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Recommended Careers', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    const careersText = type.careers.join(', ');
-    const careerLines = doc.splitTextToSize(careersText, contentWidth);
-    doc.text(careerLines, margin, yPosition);
-    yPosition += careerLines.length * lineHeight + 5;
-    
-    // 관계 특성
-    if (yPosition > 220) {
-        doc.addPage();
-        yPosition = 20;
-    }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Relationships', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    const relLines = doc.splitTextToSize(type.relationships, contentWidth);
-    doc.text(relLines, margin, yPosition);
-    
-    // Footer
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(
-            `MBTI 32 Type Analysis - Page ${i} of ${pageCount}`,
-            pageWidth / 2,
-            doc.internal.pageSize.getHeight() - 10,
-            { align: 'center' }
-        );
-    }
-    
-    // PDF 저장
-    doc.save(`MBTI_Result_${type.type}_${date.replace(/\./g, '_').replace(/\s/g, '')}.pdf`);
-    alert('PDF 파일로 저장되었습니다!');
 }
 
 // 결과 인쇄
@@ -454,8 +428,8 @@ function restartTest() {
     scrollToSection('test');
 }
 
-// 유형 정보 저장 (PDF)
-function saveTypeInfo() {
+// 유형 정보 저장 (PDF - 한글 지원)
+async function saveTypeInfo() {
     if (!currentSelectedType) {
         alert('저장할 유형이 선택되지 않았습니다.');
         return;
@@ -464,155 +438,131 @@ function saveTypeInfo() {
     const type = mbtiTypes[currentSelectedType];
     const date = new Date().toLocaleDateString('ko-KR');
     
-    // jsPDF 사용
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
+    // PDF용 임시 컨테이너 생성
+    const pdfContainer = document.createElement('div');
+    pdfContainer.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        width: 794px;
+        padding: 40px;
+        background: white;
+        font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    `;
     
-    let yPosition = 20;
-    const lineHeight = 7;
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - (margin * 2);
+    pdfContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 32px; color: #1f2937; margin-bottom: 10px;">MBTI 32가지 유형 정보</h1>
+            <p style="color: #6b7280; font-size: 14px;">날짜: ${date}</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 36px; font-weight: bold; margin-bottom: 8px;">${type.type}</div>
+            <div style="font-size: 20px;">${type.name}</div>
+        </div>
+        
+        <div style="margin-bottom: 25px; line-height: 1.8; font-size: 15px; color: #374151;">
+            ${type.description}
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+            <h2 style="font-size: 20px; color: #1f2937; margin-bottom: 15px; border-bottom: 2px solid #6366f1; padding-bottom: 8px;">특성 점수</h2>
+            ${Object.entries({
+                '에너지 (Energy)': type.traits.energy,
+                '본성 (Nature)': type.traits.nature,
+                '전술 (Tactics)': type.traits.tactics,
+                '정체성 (Identity)': type.traits.identity
+            }).map(([label, value]) => `
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: 600; color: #374151;">${label}</span>
+                        <span style="color: #6366f1; font-weight: bold;">${value}%</span>
+                    </div>
+                    <div style="background: #e5e7eb; height: 10px; border-radius: 5px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #6366f1, #8b5cf6); height: 100%; width: ${value}%; border-radius: 5px;"></div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+            <div>
+                <h2 style="font-size: 20px; color: #10b981; margin-bottom: 15px; border-bottom: 2px solid #10b981; padding-bottom: 8px;">💪 강점</h2>
+                <ul style="line-height: 2; padding-left: 20px; color: #374151;">
+                    ${type.strengths.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+            </div>
+            <div>
+                <h2 style="font-size: 20px; color: #f59e0b; margin-bottom: 15px; border-bottom: 2px solid #f59e0b; padding-bottom: 8px;">⚠️ 주의할 점</h2>
+                <ul style="line-height: 2; padding-left: 20px; color: #374151;">
+                    ${type.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h2 style="font-size: 20px; color: #1f2937; margin-bottom: 12px;">💼 추천 직업</h2>
+            <p style="line-height: 1.8; color: #374151; font-size: 15px;">
+                ${type.careers.join(' · ')}
+            </p>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; border-radius: 12px;">
+            <h2 style="font-size: 20px; color: #1f2937; margin-bottom: 12px;">❤️ 관계 특성</h2>
+            <p style="line-height: 1.8; color: #374151; font-size: 15px;">
+                ${type.relationships}
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px;">
+            MBTI 32 Type Analysis © 2025
+        </div>
+    `;
     
-    // 제목
-    doc.setFontSize(24);
-    doc.text('MBTI 32 Type Information', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
+    document.body.appendChild(pdfContainer);
     
-    // 날짜
-    doc.setFontSize(10);
-    doc.text(`Date: ${date}`, pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
-    
-    // 유형 박스
-    doc.setFillColor(99, 102, 241);
-    doc.roundedRect(margin, yPosition, contentWidth, 20, 3, 3, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.text(type.type, pageWidth / 2, yPosition + 8, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(type.name, pageWidth / 2, yPosition + 15, { align: 'center' });
-    yPosition += 30;
-    
-    // 설명
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    const descLines = doc.splitTextToSize(type.description, contentWidth);
-    doc.text(descLines, margin, yPosition);
-    yPosition += descLines.length * lineHeight + 5;
-    
-    // 특성 점수
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Traits Score', margin, yPosition);
-    yPosition += 10;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    
-    const traits = [
-        { name: 'Energy', value: type.traits.energy },
-        { name: 'Nature', value: type.traits.nature },
-        { name: 'Tactics', value: type.traits.tactics },
-        { name: 'Identity', value: type.traits.identity }
-    ];
-    
-    traits.forEach(trait => {
-        doc.text(`${trait.name}:`, margin, yPosition);
-        doc.setDrawColor(229, 231, 235);
-        doc.setFillColor(229, 231, 235);
-        doc.roundedRect(margin + 30, yPosition - 3, 100, 5, 1, 1, 'F');
-        doc.setFillColor(99, 102, 241);
-        doc.roundedRect(margin + 30, yPosition - 3, trait.value, 5, 1, 1, 'F');
-        doc.text(`${trait.value}%`, margin + 135, yPosition);
-        yPosition += 8;
-    });
-    yPosition += 5;
-    
-    // 강점
-    if (yPosition > 200) {
-        doc.addPage();
-        yPosition = 20;
+    try {
+        // html2canvas로 이미지 생성
+        const canvas = await html2canvas(pdfContainer, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        // PDF 생성
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        // 첫 페이지
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= 297; // A4 height in mm
+        
+        // 여러 페이지가 필요한 경우
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= 297;
+        }
+        
+        // PDF 저장
+        pdf.save(`MBTI_유형_${type.type}_${date.replace(/\./g, '_').replace(/\s/g, '')}.pdf`);
+        alert('PDF 파일로 저장되었습니다!');
+    } catch (error) {
+        console.error('PDF 생성 오류:', error);
+        alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+        // 임시 컨테이너 제거
+        document.body.removeChild(pdfContainer);
     }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Strengths', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    type.strengths.forEach(strength => {
-        const text = `• ${strength}`;
-        const lines = doc.splitTextToSize(text, contentWidth);
-        doc.text(lines, margin, yPosition);
-        yPosition += lines.length * lineHeight;
-    });
-    yPosition += 5;
-    
-    // 약점
-    if (yPosition > 220) {
-        doc.addPage();
-        yPosition = 20;
-    }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Weaknesses', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    type.weaknesses.forEach(weakness => {
-        const text = `• ${weakness}`;
-        const lines = doc.splitTextToSize(text, contentWidth);
-        doc.text(lines, margin, yPosition);
-        yPosition += lines.length * lineHeight;
-    });
-    yPosition += 5;
-    
-    // 추천 직업
-    if (yPosition > 220) {
-        doc.addPage();
-        yPosition = 20;
-    }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Recommended Careers', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    const careersText = type.careers.join(', ');
-    const careerLines = doc.splitTextToSize(careersText, contentWidth);
-    doc.text(careerLines, margin, yPosition);
-    yPosition += careerLines.length * lineHeight + 5;
-    
-    // 관계 특성
-    if (yPosition > 220) {
-        doc.addPage();
-        yPosition = 20;
-    }
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('Relationships', margin, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    const relLines = doc.splitTextToSize(type.relationships, contentWidth);
-    doc.text(relLines, margin, yPosition);
-    
-    // Footer
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(
-            `MBTI 32 Type Analysis - Page ${i} of ${pageCount}`,
-            pageWidth / 2,
-            doc.internal.pageSize.getHeight() - 10,
-            { align: 'center' }
-        );
-    }
-    
-    // PDF 저장
-    doc.save(`MBTI_Type_${type.type}_${date.replace(/\./g, '_').replace(/\s/g, '')}.pdf`);
-    alert('PDF 파일로 저장되었습니다!');
 }
 
 // 유형 정보 인쇄
